@@ -17,6 +17,15 @@ data_files*/
 *.csv
 *.tsv
 *.gz
+*.txt
+*.rtf
+
+# Local experiment snapshots and environment exports
+/pref_noisyG*
+/random_noisyG*
+/requirements.txt
+/grakel_requirements.txt
+/graph_stat_comparison.py
 
 # Generated graphs, metrics, and figures
 noisy_graph/
