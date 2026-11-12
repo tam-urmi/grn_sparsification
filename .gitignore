@@ -1,0 +1,48 @@
+.DS_Store
+.Rhistory
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+myenv/
+
+# Local inputs and downloaded datasets
+data/
+data_files/
+data_files*/
+*.pkl
+*.pickle
+*.edgelist
+*.csv
+*.tsv
+*.gz
+
+# Generated graphs, metrics, and figures
+noisy_graph/
+original_graph/
+pruned_graphs*/
+results*/
+PCA_Trend_Analysis/
+PCA_trend_analysis/
+sparsifier_feature_subplots_per_graph/
+*.png
+*.log
+
+# Local archives, upstream projects, and research material
+archive/
+papers/
+citations/
+netsci_x_abstract/
+sparsification/
+
+# Notebooks may contain saved outputs or embedded data; curate before adding
+*.ipynb
+
+# Personal documents and presentation exports
+*.docx
+*.numbers
+*.xlsx
+*.pptx
+*.pdf
+*.zip
