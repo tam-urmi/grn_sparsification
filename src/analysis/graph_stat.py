@@ -7,10 +7,12 @@ from collections import defaultdict
 import ast
 from grakel import GraphKernel
 
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Define the root directories
-PRUNED_GRAPHS_DIR = "pruned_graphs"
-ORIGINAL_GRAPH_DIR = "original_graph"
-NOISY_GRAPHS_DIR = "noisy_graph"
+PRUNED_GRAPHS_DIR = os.path.join(PROJECT_DIR, "results", "graphs", "sparsified")
+ORIGINAL_GRAPH_DIR = os.path.join(PROJECT_DIR, "results", "graphs", "original")
+NOISY_GRAPHS_DIR = os.path.join(PROJECT_DIR, "results", "graphs", "noisy")
 
 def load_graph_from_edgelist(file_path):
     G = nx.Graph()
@@ -135,33 +137,35 @@ def process_graphs():
             "state": state,
             "features": features
         })
-    for file in os.listdir(ORIGINAL_GRAPH_DIR):
-        if file.endswith(".edgelist"):
-            graph_type = file.split(".")[0]
-            G = load_graph_from_edgelist(os.path.join(ORIGINAL_GRAPH_DIR, file))
-            add_graph(G, graph_type, "NA", "NA", "original")
-    for graph_folder in os.listdir(PRUNED_GRAPHS_DIR):
-        graph_path = os.path.join(PRUNED_GRAPHS_DIR, graph_folder)
-        if os.path.isdir(graph_path):
-            parts = graph_folder.split("_")
-            if len(parts) > 2:
-                noise_type = "_".join(parts[0:1])
-                graph_type = "pruned_" + "_".join(parts[2:])
-                for file in os.listdir(graph_path):
-                    if file.endswith(".edgelist"):
-                        sparsifier_type = file.split(".")[0]
-                        G = load_graph_from_edgelist(os.path.join(graph_path, file))
-                        add_graph(G, graph_type, noise_type, sparsifier_type, "pruned")
-    for file in os.listdir(NOISY_GRAPHS_DIR):
-        if file.endswith(".edgelist"):
-            filename = file.split(".")[0]
-            if "_" in filename:
-                noise_type, graph_type = filename.split("_", 1)
-            else:
-                noise_type = "unknown"
-                graph_type = filename
-            G = load_graph_from_edgelist(os.path.join(NOISY_GRAPHS_DIR, file))
-            add_graph(G, graph_type, noise_type, "NA", "noised")
+    for graph_path, _, files in os.walk(ORIGINAL_GRAPH_DIR):
+        for file in files:
+            if file.endswith(".edgelist"):
+                graph_type = file.split(".")[0]
+                G = load_graph_from_edgelist(os.path.join(graph_path, file))
+                add_graph(G, graph_type, "NA", "NA", "original")
+    for graph_path, _, files in os.walk(PRUNED_GRAPHS_DIR):
+        graph_folder = os.path.basename(graph_path)
+        parts = graph_folder.split("_")
+        if len(parts) <= 2:
+            continue
+        noise_type = parts[0]
+        graph_type = "pruned_" + "_".join(parts[2:])
+        for file in files:
+            if file.endswith(".edgelist"):
+                sparsifier_type = file.split(".")[0]
+                G = load_graph_from_edgelist(os.path.join(graph_path, file))
+                add_graph(G, graph_type, noise_type, sparsifier_type, "pruned")
+    for graph_path, _, files in os.walk(NOISY_GRAPHS_DIR):
+        for file in files:
+            if file.endswith(".edgelist"):
+                filename = file.split(".")[0]
+                if "_" in filename:
+                    noise_type, graph_type = filename.split("_", 1)
+                else:
+                    noise_type = "unknown"
+                    graph_type = filename
+                G = load_graph_from_edgelist(os.path.join(graph_path, file))
+                add_graph(G, graph_type, noise_type, "NA", "noised")
     wl_embeddings = generate_wl_embeddings(all_graphs, wl_embedding_size=15)
     for i, meta in enumerate(meta_info):
         emb = wl_embeddings[i]
@@ -182,5 +186,7 @@ def process_graphs():
 if __name__ == "__main__":
     df_graphs = process_graphs()
     df_graphs = df_graphs.fillna(0)
-    df_graphs.to_csv("graph_statistics.csv", index=False)
+    tables_dir = os.path.join(PROJECT_DIR, "results", "tables")
+    os.makedirs(tables_dir, exist_ok=True)
+    df_graphs.to_csv(os.path.join(tables_dir, "graph_statistics.csv"), index=False)
     print("Saved graph statistics.")

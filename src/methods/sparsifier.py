@@ -7,8 +7,11 @@ import scipy.sparse as sparse
 from scipy.sparse.linalg import cg
 
 # Define the base directory dynamically
-base_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory dynamically
-noisy_graph_dir = os.path.join(base_dir, "noisy_graph")
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+noisy_graph_dir = os.path.join(base_dir, "results", "graphs", "noisy")
+pruned_graphs_dir = os.path.join(
+    base_dir, "results", "graphs", "sparsified", "baselines"
+)
 
 def load_noisy_graphs():
     """
@@ -47,11 +50,6 @@ def load_noisy_graphs():
             print(f"Loaded directed graph: {graph_name}")
 
     return graphs
-
-# Example usage
-noisy_graphs_dict = load_noisy_graphs()
-print("Graph names: ", [i for i in noisy_graphs_dict.keys()])
-print(f"Total noisy graphs loaded: {len(noisy_graphs_dict)}")
 
 ### Define sparsifiers
 
@@ -311,7 +309,6 @@ def save_graph(G, directory, filename):
 
 def process_noisy_graphs(noisy_graphs_dict, sparsifiers):
     """Applies all sparsifiers to graphs in noisy_graphs_dict, saves them, and logs edge counts."""
-    pruned_graphs_dir = "pruned_graphs"
     os.makedirs(pruned_graphs_dir, exist_ok=True)
 
     for graph_name, G in noisy_graphs_dict.items():
@@ -348,16 +345,32 @@ def process_noisy_graphs(noisy_graphs_dict, sparsifiers):
             # Save pruned graph
             save_graph(pruned_graph, graph_folder, f"{sparsifier_name}")
 
-# === Updated Sparsifiers List (All Parameters Set Here) === #
-sparsifiers = [
-    ("KNeighbor", KNeighborSparsifier, {"k": 6}),
-    ("RankDegree", RankDegreeSparsifier, {"targetRatio": 0.65}),
-    ("Cut", CutSparsifier, {"targetRatio": 0.65}),
-    ("RandomEdge", RandomEdgeSparsifier, {"targetRatio": 0.65}),
-    ("ForestFire", ForestFireSparsifier, {"targetRatio": 0.65, "burn_prob": 0.1}),
-    ("EffR", EffRSparsifier, {"epsilon": 0.1, "method": "spl", "output_folder": "pruned_graphs", "file_name": "effr_sparsified"})
-]
+def main():
+    noisy_graphs_dict = load_noisy_graphs()
+    print("Graph names: ", [name for name in noisy_graphs_dict])
+    print(f"Total noisy graphs loaded: {len(noisy_graphs_dict)}")
 
-# Run processing
-process_noisy_graphs(noisy_graphs_dict, sparsifiers)
-print("\nAll graphs processed and saved!")
+    sparsifiers = [
+        ("KNeighbor", KNeighborSparsifier, {"k": 6}),
+        ("RankDegree", RankDegreeSparsifier, {"targetRatio": 0.65}),
+        ("Cut", CutSparsifier, {"targetRatio": 0.65}),
+        ("RandomEdge", RandomEdgeSparsifier, {"targetRatio": 0.65}),
+        ("ForestFire", ForestFireSparsifier, {"targetRatio": 0.65, "burn_prob": 0.1}),
+        (
+            "EffR",
+            EffRSparsifier,
+            {
+                "epsilon": 0.1,
+                "method": "spl",
+                "output_folder": pruned_graphs_dir,
+                "file_name": "effr_sparsified",
+            },
+        ),
+    ]
+
+    process_noisy_graphs(noisy_graphs_dict, sparsifiers)
+    print("\nAll graphs processed and saved!")
+
+
+if __name__ == "__main__":
+    main()

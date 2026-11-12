@@ -8,24 +8,33 @@ objective includes triangle motifs, longer paths, and connectedness.
 
 ## What exists
 
-- **Synthetic and real-network preparation:** `create_graphs.py` builds several
-  synthetic graph families, loads real GRN inputs, and adds randomly sampled
-  noise edges.
-- **Baseline comparisons:** `sparsifier_TriPathLoss.py` contains multiple
-  baseline sparsifiers and an experimental triangle/path edge-scoring routine.
-- **Neural ranking experiment:** `grn_sparsifier.py` ranks edges from triangle,
-  betweenness, and articulation-point features, then applies degree,
-  modularity, and density penalties.
-- **Evaluation:** scripts in `src/` analyze graph statistics and PCA summaries;
-  notebook experiments and result files remain local pending curation.
-- **Biological-network acquisition:** `biogrn_sparse` currently contributes a
-  YEASTRACT downloader. Its local TCGA network files are data, not source code,
-  and are excluded from publication.
+- **Synthetic and real-network preparation:** `src/data/create_graphs.py` builds
+  synthetic graph families, loads real GRN inputs, and adds noise edges.
+- **Baseline comparisons:** `src/methods/sparsifier.py` contains baseline
+  methods; `src/experimental/sparsifier_TriPathLoss.py` is the triangle/path
+  scoring prototype.
+- **Neural ranking experiment:** `src/methods/grn_sparsifier.py` ranks edges
+  from triangle, betweenness, and articulation-point features, then applies
+  degree, modularity, and density penalties.
+- **Evaluation:** scripts in `src/analysis/` analyze graph statistics and PCA
+  summaries. Generated metrics and figures are kept under local `results/`.
+- **Biological-network acquisition:** the former `biogrn_sparse` inputs and
+  YEASTRACT downloader are consolidated into `data/raw/tcga_cancer/` and
+  `src/data/`. The large TCGA files remain local and are excluded from
+  publication.
 - **Baseline framework:** the cluster `sparsification` directory has the same
-  general-purpose framework layout as the separate nested `sparsification/`
-  checkout. Keep it as a referenced baseline rather than merging or copying its
-  unrelated upstream code and history. Its public project is
+  general-purpose framework layout as the separate nested baseline checkout.
+  Keep it as a referenced baseline rather than merging its unrelated upstream
+  code and history. Its public project is
   [tam-urmi/sparsification](https://github.com/tam-urmi/sparsification).
+
+## Local workspace organization
+
+The local project uses `src/`, `data/raw/`, `data/processed/`, `results/`,
+`lit/`, and `archive/`. Raw datasets and generated outputs are intentionally
+not part of the public Git repository. The `results/archived/` folder contains
+older generated runs; its accompanying index describes intended deliverables,
+not an independently validated or complete result set.
 
 ## Main algorithm is still a prototype
 

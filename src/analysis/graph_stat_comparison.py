@@ -6,9 +6,9 @@ import numpy as np
 import os
 
 # ---- SETTINGS ----
-project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-input_file = os.path.join(project_dir, "graph_statistics.csv")
-output_dir = os.path.join(project_dir, "sparsifier_feature_subplots_per_graph")
+project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+input_file = os.path.join(project_dir, "results", "tables", "graph_statistics.csv")
+output_dir = os.path.join(project_dir, "results", "figures", "feature_subplots")
 os.makedirs(output_dir, exist_ok=True)
 
 # ---- METADATA COLUMNS ----

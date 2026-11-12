@@ -9,20 +9,13 @@ import pickle
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Define base directories relative to the script's location
-base_dir = script_dir
-data_dir = os.path.join(script_dir, "data_files")
+base_dir = os.path.dirname(os.path.dirname(script_dir))
+data_dir = os.path.join(base_dir, "data", "raw", "grn")
 
 # Ensure the original graph directory exists
-original_graph_dir = os.path.join(base_dir, "original_graph")
-os.makedirs(original_graph_dir, exist_ok=True)
+original_graph_dir = os.path.join(base_dir, "results", "graphs", "original")
 
-noisy_graph_dir = os.path.join(base_dir, "noisy_graph")
-os.makedirs(noisy_graph_dir, exist_ok=True)
-
-print("Base Directory:", base_dir)
-print("Data Directory:", data_dir)
-print("Original Graphs Directory:", original_graph_dir)
-print("Noisy Graphs Directory:", noisy_graph_dir)
+noisy_graph_dir = os.path.join(base_dir, "results", "graphs", "noisy")
 
 #### Functions ####
 
@@ -37,6 +30,8 @@ def save_graph(G, filename, directory):
     """
     edgelist_path = os.path.join(directory, f"{filename}.edgelist")
     pkl_path = os.path.join(directory, f"{filename}.pkl")
+
+    os.makedirs(directory, exist_ok=True)
 
     # Save as edgelist
     nx.write_edgelist(G, edgelist_path, data=True)
@@ -154,12 +149,7 @@ def add_random_noise_edges(graph, graph_name):
     print("Number of noisy edges added:", len(noise_edges), "Real edge count:", original_edge_count)
 
     # Save the graph as an edge list with labels
-    with open(graph_name, 'w') as f:
-        for u, v, data in graph_copy.edges(data=True):
-            label = data.get('label', 'real')  # Default label to 'real' if not specified
-            f.write(f"{u} {v} {label}\n")
-
-    print(f"Graph with noise edges saved to {graph_name}")
+    print(f"Graph with noise edges saved to {noisy_graph_dir}")
     save_graph(graph_copy, graph_name, noisy_graph_dir)
     return graph_copy
 
@@ -218,66 +208,54 @@ def add_preferential_noise_edges(graph, graph_name):
     print(f"Total noise edges added: {sum(noise_edges_count.values()) // 2}")
 
     # Step 4: Save the graph as an edge list with labels
-    with open(graph_name, 'w') as f:
-        for u, v, data in graph_copy.edges(data=True):
-            label = data.get('label', 'real')  # Default label to 'real' if not specified
-            f.write(f"{u} {v} {label}\n")
-
     save_graph(graph_copy, graph_name, noisy_graph_dir)
     print(f"Graph with preferential noise edges saved as {graph_name}")
     return graph_copy
 
 
-# Create each graph
+def main():
+    os.makedirs(original_graph_dir, exist_ok=True)
+    os.makedirs(noisy_graph_dir, exist_ok=True)
 
-G_ms_numeric = create_graph_ms_numeric()
-G_ecoli = create_graph_ecoli()
-G_c_elegans = create_graph_c_elegans()
-G_preferential_attachment = create_preferential_attachment_graph()
-G_stochastic_block = create_stochastic_block_model_graph()
-G_degree_corrected_block = create_degree_corrected_block_model_graph()
+    graphs = {
+        "ms_numeric": create_graph_ms_numeric(),
+        "ecoli": create_graph_ecoli(),
+        "c_elegans": create_graph_c_elegans(),
+        "pref_attachment": create_preferential_attachment_graph(),
+        "stochastic_block": create_stochastic_block_model_graph(),
+        "deg_corrected_block": create_degree_corrected_block_model_graph(),
+    }
 
-# Add random noise to the graphs
+    noisy_graphs = []
+    summary_data = []
+    for graph_name, graph in graphs.items():
+        for noise_type, add_noise in (
+            ("random", add_random_noise_edges),
+            ("pref", add_preferential_noise_edges),
+        ):
+            name = f"{noise_type}_noisyG_{graph_name}"
+            noisy_graph = add_noise(graph, name)
+            noisy_graphs.append((name, noisy_graph))
+            summary_data.append({
+                "graph_name": name,
+                "real_edges": sum(
+                    1 for _, _, data in noisy_graph.edges(data=True)
+                    if data.get("label") == "real"
+                ),
+                "noise_edges": sum(
+                    1 for _, _, data in noisy_graph.edges(data=True)
+                    if data.get("label") == "noise"
+                ),
+            })
 
-rand_noisyG_ms_numeric = add_random_noise_edges(G_ms_numeric, "random_noisyG_ms_numeric")
-rand_noisyG_ecoli = add_random_noise_edges(G_ecoli, "random_noisyG_ecoli")
-rand_noisyG_c_elegans = add_random_noise_edges(G_c_elegans, "random_noisyG_c_elegans")
-rand_noisyG_pref_attachment = add_random_noise_edges(G_preferential_attachment, "random_noisyG_pref_attachment")
-rand_noisyG_stochastic_block = add_random_noise_edges(G_stochastic_block, "random_noisyG_stochastic_block")
-rand_noisyG_deg_corrected_block = add_random_noise_edges(G_degree_corrected_block, "random_noisyG_deg_corrected_block")
+    tables_dir = os.path.join(base_dir, "results", "tables")
+    os.makedirs(tables_dir, exist_ok=True)
+    graph_setup_init_df = pd.DataFrame(summary_data)
+    graph_setup_init_df.to_csv(
+        os.path.join(tables_dir, "graph_setup_init_df.csv"), index=False
+    )
+    print(graph_setup_init_df)
 
 
-# Add preferential noise to the graphs
-
-pref_noisyG_ms_numeric = add_preferential_noise_edges(G_ms_numeric, "pref_noisyG_ms_numeric")
-pref_noisyG_ecoli = add_preferential_noise_edges(G_ecoli, "pref_noisyG_ecoli")
-pref_noisyG_c_elegans = add_preferential_noise_edges(G_c_elegans, "pref_noisyG_c_elegans")
-pref_noisyG_pref_attachment = add_preferential_noise_edges(G_preferential_attachment, "pref_noisyG_pref_attachment")
-pref_noisyG_stochastic_block = add_preferential_noise_edges(G_stochastic_block, "pref_noisyG_stochastic_block")
-pref_noisyG_deg_corrected_block = add_preferential_noise_edges(G_degree_corrected_block, "pref_noisyG_deg_corrected_block")
-
-# Add noise and collect graphs
-noisy_graphs = []
-noisy_graphs.append(("random_noisyG_ms_numeric", rand_noisyG_ms_numeric))
-noisy_graphs.append(("random_noisyG_ecoli", rand_noisyG_ecoli))
-noisy_graphs.append(("random_noisyG_c_elegans", rand_noisyG_c_elegans))
-noisy_graphs.append(("random_noisyG_pref_attachment", rand_noisyG_pref_attachment))
-noisy_graphs.append(("random_noisyG_stochastic_block", rand_noisyG_stochastic_block))
-noisy_graphs.append(("random_noisyG_deg_corrected_block", rand_noisyG_deg_corrected_block))
-noisy_graphs.append(("pref_noisyG_ms_numeric", pref_noisyG_ms_numeric))
-noisy_graphs.append(("pref_noisyG_ecoli", pref_noisyG_ecoli))
-noisy_graphs.append(("pref_noisyG_c_elegans", pref_noisyG_c_elegans))
-noisy_graphs.append(("pref_noisyG_pref_attachment", pref_noisyG_pref_attachment))
-noisy_graphs.append(("pref_noisyG_stochastic_block", pref_noisyG_stochastic_block))
-noisy_graphs.append(("pref_noisyG_deg_corrected_block", pref_noisyG_deg_corrected_block))
-
-# Generate summary of noise and real edge counts
-summary_data = []
-for name, G in noisy_graphs:
-    real_count = sum(1 for _, _, d in G.edges(data=True) if d.get('label') == 'real')
-    noise_count = sum(1 for _, _, d in G.edges(data=True) if d.get('label') == 'noise')
-    summary_data.append({"graph_name": name, "real_edges": real_count, "noise_edges": noise_count})
-
-graph_setup_init_df = pd.DataFrame(summary_data)
-graph_setup_init_df.to_csv("graph_setup_init_df.csv", index=False)
-print(graph_setup_init_df)
+if __name__ == "__main__":
+    main()

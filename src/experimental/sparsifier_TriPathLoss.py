@@ -10,6 +10,10 @@ import networkit as nk
 import scipy.sparse as sparse
 from scipy.sparse.linalg import cg
 
+project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+data_dir = os.path.join(project_dir, "data", "raw", "grn")
+noisy_graph_dir = os.path.join(project_dir, "results", "graphs", "noisy")
+
 
 #### Functions ####
 
@@ -284,12 +288,14 @@ def add_random_noise_edges(graph, output_file):
     print("Number of noisy edges added:", len(noise_edges), "Real edge count:", original_edge_count)
 
     # Save the graph as an edge list with labels
-    with open(output_file, 'w') as f:
+    os.makedirs(noisy_graph_dir, exist_ok=True)
+    output_path = os.path.join(noisy_graph_dir, os.path.basename(output_file))
+    with open(output_path, 'w') as f:
         for u, v, data in graph_copy.edges(data=True):
             label = data.get('label', 'real')  # Default label to 'real' if not specified
             f.write(f"{u} {v} {label}\n")
 
-    print(f"Graph with noise edges saved to {output_file}")
+    print(f"Graph with noise edges saved to {output_path}")
     return graph_copy
 
 
@@ -760,71 +766,60 @@ def TrianglePathLossSparsifier(G, edge_labels, targetRatio, output_folder, file_
 
     return new_G, new_edge_labels
 
-#----------------- run the functions --------------------#
+def main():
+    graph_factories = [
+        ("MS", "noisyG_ms_numeric", create_graph_ms_numeric),
+        ("EColi", "noisyG_ecoli", create_graph_ecoli),
+        ("CElegans", "noisyG_c_elegans", create_graph_c_elegans),
+        ("PA", "noisyG_pref_attachment", preferential_attachment_graph),
+        ("Stoch_block", "noisyG_stochastic_block", stochastic_block_model_graph),
+        ("DC_block", "noisyG_deg_corrected_block", degree_corrected_block_model_graph),
+        ("RandomGeom", "noisyG_random_geometric", random_geometric_graph),
+    ]
+    noisy_graphs = [
+        (
+            name,
+            add_random_noise_edges(graph_factory(), f"{output_name}.edgelist"),
+        )
+        for name, output_name, graph_factory in graph_factories
+    ]
+
+    output_folder = os.path.join(
+        project_dir, "results", "graphs", "sparsified", "triangle_path"
+    )
+    os.makedirs(output_folder, exist_ok=True)
+
+    triangle_path_sparsifiers = [
+        (
+            "TrianglePathLoss",
+            TrianglePathLossSparsifier,
+            {
+                "targetRatio": 0.5,
+                "rho": 0.1,
+                "triangle_weight": 0.5,
+                "path_weight": 0.5,
+                "min_path_length": 7,
+            },
+        )
+    ]
+    apply_sparsifiers(noisy_graphs, triangle_path_sparsifiers, output_folder)
+
+    baseline_sparsifiers = [
+        ("KNeighbor", KNeighborSparsifier, {"k": 5}),
+        ("RankDegree", RankDegreeSparsifier, {"targetRatio": 0.5, "rho": 0.1}),
+        ("Cut", CutSparsifier, {"targetRatio": 0.5}),
+        ("RandomEdge", RandomEdgeSparsifier, {"targetRatio": 0.5}),
+        ("LocalDegree", LocalDegreeSparsifier, {"targetRatio": 0.5}),
+        ("ForestFire", ForestFireSparsifier, {"targetRatio": 0.5}),
+        ("LocalSimilarity", LocalSimilaritySparsifier, {"targetRatio": 0.5}),
+        (
+            "EffR",
+            EffR,
+            {"epsilon": 0.1, "type": "kts", "tol": 1e-10, "precon": False},
+        ),
+    ]
+    apply_sparsifiers(noisy_graphs, baseline_sparsifiers, output_folder)
 
 
-### Create the graphs
-
-G_ms_numeric = create_graph_ms_numeric()
-G_ecoli = create_graph_ecoli()
-G_c_elegans = create_graph_c_elegans()
-G_preferential_attachment = preferential_attachment_graph()
-G_stochastic_block = stochastic_block_model_graph()
-G_degree_corrected_block = degree_corrected_block_model_graph()
-G_random_geometric = random_geometric_graph()
-
-
-### Add random noise to the graphs
-
-noisyG_ms_numeric = add_random_noise_edges(G_ms_numeric, "noisyG_ms_numeric.edgelist")
-noisyG_ecoli = add_random_noise_edges(G_ecoli, "noisyG_ecoli.edgelist")
-noisyG_c_elegans = add_random_noise_edges(G_c_elegans, "noisyG_c_elegans.edgelist")
-noisyG_pref_attachment = add_random_noise_edges(G_preferential_attachment, "noisyG_pref_attachment.edgelist")
-noisyG_stochastic_block = add_random_noise_edges(G_stochastic_block, "noisyG_stochastic_block.edgelist")
-noisyG_deg_corrected_block = add_random_noise_edges(G_degree_corrected_block, "noisyG_deg_corrected_block.edgelist")
-noisyG_random_geometric = add_random_noise_edges(G_random_geometric, "noisyG_random_geometric.edgelist")
-
-
-### List out the graphs and noisy graphs
-graphs = [("MS", G_ms_numeric), ("EColi", G_ecoli), ("CElegans", G_c_elegans), ("PA", G_preferential_attachment), ("Stoch_block", G_stochastic_block), ("DC_block", G_degree_corrected_block), ("RandomGeom", G_random_geometric)]
-noisy_graphs = [("MS", noisyG_ms_numeric), ("EColi", noisyG_ecoli), ("CElegans", noisyG_c_elegans), ("PA", noisyG_pref_attachment), ("Stoch_block", noisyG_stochastic_block), ("DC_block", noisyG_deg_corrected_block), ("RandomGeom", noisyG_random_geometric)]
-
-### Apply the sparsifiers on the noisy graphs
-
-# Define output folder for pruned graphs
-output_folder = "pruned_graphs"
-os.makedirs(output_folder, exist_ok=True)
-
-
-# Apply new sparsifiers on the noisy graphs
-# noisy_graphs_small = noisy_graphs[3:-1] ## Only run on the synthetic graphs to begin with
-
-sparsifiers = [
-    ("TrianglePathLoss", TrianglePathLossSparsifier, {
-        "targetRatio": 0.5,
-        "rho": 0.1,
-        "triangle_weight": 0.5,
-        "path_weight": 0.5,
-        "min_path_length": 7  # Set as needed
-    })
-]
-
-apply_sparsifiers(noisy_graphs, sparsifiers, output_folder)
-# apply_sparsifiers(noisy_graphs_small, sparsifiers, output_folder) ## Run this if it takes way too long
-
-### Run this ONLY after the above is done
-
-# Define the sparsifiers list, each with its parameters
-sparsifiers = [
-    ("KNeighbor", KNeighborSparsifier, {"k": 5}),
-    ("RankDegree", RankDegreeSparsifier, {"targetRatio": 0.5, "rho": 0.1}),
-    ("Cut", CutSparsifier, {"targetRatio": 0.5}),
-    ("RandomEdge", RandomEdgeSparsifier, {"targetRatio": 0.5}),
-    ("LocalDegree", LocalDegreeSparsifier, {"targetRatio": 0.5}),
-    ("ForestFire", ForestFireSparsifier, {"targetRatio": 0.5}),
-    ("LocalSimilarity", LocalSimilaritySparsifier, {"targetRatio": 0.5}),
-    ("EffR", EffR, {"epsilon": 0.1, "type": "kts", "tol": 1e-10, "precon": False})
-]
-
-# Assuming noisy_graphs is a list of tuples with graph names and their corresponding NetworkX graph objects
-apply_sparsifiers(noisy_graphs, sparsifiers, output_folder)
+if __name__ == "__main__":
+    main()

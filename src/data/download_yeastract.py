@@ -122,8 +122,12 @@ def to_matrix(df_edges: pd.DataFrame, out_csv: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--outdir", type=Path, default=Path("."),
-                    help="Directory to write outputs")
+    ap.add_argument(
+        "--outdir",
+        type=Path,
+        default=Path(__file__).resolve().parents[2] / "data" / "raw" / "yeastract",
+        help="Directory to write outputs",
+    )
     ap.add_argument("--matrix", action="store_true",
                     help="Also write a binary TF×gene matrix CSV")
     args = ap.parse_args()

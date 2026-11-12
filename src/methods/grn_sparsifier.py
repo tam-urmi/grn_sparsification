@@ -10,9 +10,11 @@ from sklearn.preprocessing import MinMaxScaler
 from networkx.algorithms.community import greedy_modularity_communities
 
 # ---- PATHS ----
-base_dir = os.path.dirname(os.path.abspath(__file__))
-noisy_graph_dir = os.path.join(base_dir, "noisy_graph")
-pruned_graphs_dir = os.path.join(base_dir, "pruned_graphs_v3")
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+noisy_graph_dir = os.path.join(base_dir, "results", "graphs", "noisy")
+pruned_graphs_dir = os.path.join(
+    base_dir, "results", "graphs", "sparsified", "neural_v3"
+)
 
 # ---- UTILITIES ----
 def save_graph(graph, edge_labels, folder, filename):

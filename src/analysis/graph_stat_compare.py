@@ -6,9 +6,11 @@ from scipy.linalg import eigvalsh
 from collections import defaultdict
 import ast
 
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Define the root directories
-PRUNED_GRAPHS_DIR = "pruned_graphs"
-ORIGINAL_GRAPH_DIR = "original_graph"
+PRUNED_GRAPHS_DIR = os.path.join(PROJECT_DIR, "results", "graphs", "sparsified")
+ORIGINAL_GRAPH_DIR = os.path.join(PROJECT_DIR, "results", "graphs", "original")
 
 def load_graph_from_edgelist(file_path):
     G = nx.Graph()
@@ -77,33 +79,34 @@ def process_graphs():
     data = []
 
     # Process original graphs
-    for file in os.listdir(ORIGINAL_GRAPH_DIR):
-        if file.endswith(".edgelist"):
-            graph_type = file.split(".")[0]
-            G = load_graph_from_edgelist(os.path.join(ORIGINAL_GRAPH_DIR, file))
-            stats = compute_graph_statistics(G)
-            stats.update({"graph_type": graph_type, "noisy_type": "NA", "sparsifier_type": "NA"})
-            data.append(stats)
+    for graph_path, _, files in os.walk(ORIGINAL_GRAPH_DIR):
+        for file in files:
+            if file.endswith(".edgelist"):
+                graph_type = file.split(".")[0]
+                G = load_graph_from_edgelist(os.path.join(graph_path, file))
+                stats = compute_graph_statistics(G)
+                stats.update({"graph_type": graph_type, "noisy_type": "NA", "sparsifier_type": "NA"})
+                data.append(stats)
 
     # Process pruned graphs
-    for graph_folder in os.listdir(PRUNED_GRAPHS_DIR):
-        graph_path = os.path.join(PRUNED_GRAPHS_DIR, graph_folder)
-        if os.path.isdir(graph_path):
-            parts = graph_folder.split("_")
-            if len(parts) > 2:
-                noisy_type = "_".join(parts[0:1])
-                graph_type = "_".join(parts[2:])
-                for file in os.listdir(graph_path):
-                    if file.endswith(".edgelist"):
-                        sparsifier_type = file.split(".")[0]
-                        G = load_graph_from_edgelist(os.path.join(graph_path, file))
-                        stats = compute_graph_statistics(G)
-                        stats.update({
-                            "graph_type": graph_type,
-                            "noisy_type": noisy_type,
-                            "sparsifier_type": sparsifier_type
-                        })
-                        data.append(stats)
+    for graph_path, _, files in os.walk(PRUNED_GRAPHS_DIR):
+        graph_folder = os.path.basename(graph_path)
+        parts = graph_folder.split("_")
+        if len(parts) <= 2:
+            continue
+        noisy_type = parts[0]
+        graph_type = "_".join(parts[2:])
+        for file in files:
+            if file.endswith(".edgelist"):
+                sparsifier_type = file.split(".")[0]
+                G = load_graph_from_edgelist(os.path.join(graph_path, file))
+                stats = compute_graph_statistics(G)
+                stats.update({
+                    "graph_type": graph_type,
+                    "noisy_type": noisy_type,
+                    "sparsifier_type": sparsifier_type
+                })
+                data.append(stats)
 
     df = pd.DataFrame(data)
     column_order = ["graph_type", "noisy_type", "sparsifier_type"] + \
@@ -116,7 +119,9 @@ def process_graphs():
 
 # Generate and display the DataFrame
 df_graphs = process_graphs()
-df_graphs.to_csv("graph_statistics.csv", index=False)
+tables_dir = os.path.join(PROJECT_DIR, "results", "tables")
+os.makedirs(tables_dir, exist_ok=True)
+df_graphs.to_csv(os.path.join(tables_dir, "graph_statistics.csv"), index=False)
 
 # Generate and display the DataFrame
 print(df_graphs.columns[0:20])

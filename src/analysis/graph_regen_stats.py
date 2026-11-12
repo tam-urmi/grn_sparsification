@@ -12,12 +12,22 @@ import netrd as nd
 from netrd.distance import JaccardDistance
 
 # Reload the CSV file
-file_path = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # df = pd.read_csv(file_path)
 
 # Define file paths
-original_graph_path = file_path + "/original_graph/ecoli_graph.edgelist"
-pruned_graph_path = file_path + "/pruned_graphs/random_noisyG_ecoli/GRN_sparsifier.edgelist"
+original_graph_path = os.path.join(
+    project_dir, "results", "graphs", "original", "ecoli_graph.edgelist"
+)
+pruned_graph_path = os.path.join(
+    project_dir,
+    "results",
+    "graphs",
+    "sparsified",
+    "v3",
+    "random_noisyG_ecoli",
+    "GRN_Sparsifier.edgelist",
+)
 
 # Load the original graph normally
 try:

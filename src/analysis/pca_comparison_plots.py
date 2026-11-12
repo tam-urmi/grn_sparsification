@@ -10,14 +10,15 @@ import textwrap
 import matplotlib.colors as mcolors
 
 # --- FILE PATHS ---
-project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_path = os.path.join(project_dir, "graph_statistics.csv")
-plot_folder = os.path.join(project_dir, "PCA_trend_analysis")
+project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+data_path = os.path.join(project_dir, "results", "tables", "graph_statistics.csv")
+plot_folder = os.path.join(project_dir, "results", "figures", "PCA_trend_analysis")
 loading_plot_dir = os.path.join(plot_folder, "top_features")
 
 # Create necessary folders
 os.makedirs(plot_folder, exist_ok=True)
 os.makedirs(loading_plot_dir, exist_ok=True)
+os.makedirs(os.path.join(project_dir, "results", "tables"), exist_ok=True)
 
 # --- LOAD DATA ---
 df = pd.read_csv(data_path)
@@ -51,7 +52,9 @@ for i in range(num_components):
     top_pc_df[f"PC{i+1}"] = X_pca_top[:, i]
 
 print("TOP PC DF:", top_pc_df.tail())
-top_pc_df.to_csv(os.path.join(project_dir, "top_pc_df.csv"))
+top_pc_df.to_csv(
+    os.path.join(project_dir, "results", "tables", "top_pc_df.csv")
+)
 
 # --- PLOT TOP FEATURE LOADINGS PER PC ---
 loadings = np.abs(pca.components_[:num_components])
@@ -167,7 +170,9 @@ print(pca_diff_df.shape)
 
 
 # Save to CSV
-diff_csv_path = os.path.join(project_dir, "PCA_difference_analysis.csv")
+diff_csv_path = os.path.join(
+    project_dir, "results", "tables", "PCA_difference_analysis.csv"
+)
 pca_diff_df.to_csv(diff_csv_path, index=False)
 print(f"Saved PCA difference data to: {diff_csv_path}")
 

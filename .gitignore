@@ -40,6 +40,7 @@ sparsifier_feature_subplots_per_graph/
 
 # Local archives, upstream projects, and research material
 archive/
+lit/
 papers/
 citations/
 netsci_x_abstract/

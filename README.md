@@ -13,21 +13,24 @@ algorithm package. The current approaches and their limitations are summarized i
 not yet an optimized loss function, and it does not explicitly constrain
 connectedness.
 
-## Code map
+## Project layout
 
-- `sparsifier_TriPathLoss.py` — experimental graph generation, noise injection,
-  baseline sparsifiers, and the triangle/path scoring prototype.
-- `grn_sparsifier.py` — separate neural edge-ranking experiment with degree,
-  modularity, and density penalties.
-- `create_graphs.py` — synthetic and real graph preparation and noise injection.
-- `sparsifier.py` — additional sparsifier prototypes.
-- `motif_count.py` — motif-counting experiments.
-- `src/` — graph-statistics and PCA analysis scripts.
-- `data_sources/download_yeastract.py` — YEASTRACT data-download utility from
-  the related `biogrn_sparse` work.
-- `sparsification/` — a separate baseline framework; it is not the GRN
-  sparsification implementation and is not included in this repository snapshot.
-  See the separate [baseline project](https://github.com/tam-urmi/sparsification).
+- `src/data/` — graph preparation and the YEASTRACT downloader.
+- `src/methods/` — baseline and neural sparsifier experiments.
+- `src/analysis/` — graph-statistics and PCA analysis.
+- `src/experimental/` — unfinished triangle/path prototype.
+- `src/analysis/legacy/` — older scripts requiring legacy input layouts.
+- `data/raw/` and `data/processed/` — local inputs and derived data; excluded
+  from version control.
+- `results/` — local graph outputs, metric tables, plots, and archived runs;
+  excluded from version control.
+- `lit/` — local papers, citations, reviews, and conference materials.
+- `archive/` — local notebooks, duplicate code, and unrelated or superseded
+  project material.
+- `docs/WORKSPACE_LAYOUT.md` — detailed local organization and archive guide.
+- `archive/baselines/sparsification-clone/` — the separate general-purpose
+  baseline framework, not the GRN implementation. See the separate
+  [baseline project](https://github.com/tam-urmi/sparsification).
 
 ## Data and results
 
@@ -42,4 +45,5 @@ before adding any data to this repository.
 There is not yet a validated, shared environment or end-to-end test suite.
 Dependencies and input file locations differ across the experimental scripts.
 Treat the current code as research prototypes until the setup and evaluation
-workflow are consolidated.
+workflow are consolidated. Old notebooks and environment snapshots are kept in
+the local `archive/`, not in the published source tree.
