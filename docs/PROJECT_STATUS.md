@@ -24,7 +24,8 @@ objective includes triangle motifs, longer paths, and connectedness.
 - **Baseline framework:** the cluster `sparsification` directory has the same
   general-purpose framework layout as the separate nested `sparsification/`
   checkout. Keep it as a referenced baseline rather than merging or copying its
-  unrelated upstream code and history.
+  unrelated upstream code and history. Its public project is
+  [tam-urmi/sparsification](https://github.com/tam-urmi/sparsification).
 
 ## Main algorithm is still a prototype
 

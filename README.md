@@ -27,6 +27,7 @@ connectedness.
   the related `biogrn_sparse` work.
 - `sparsification/` — a separate baseline framework; it is not the GRN
   sparsification implementation and is not included in this repository snapshot.
+  See the separate [baseline project](https://github.com/tam-urmi/sparsification).
 
 ## Data and results
 
